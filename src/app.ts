@@ -3,11 +3,13 @@ import { ZodError } from 'zod'
 import { env } from './env'
 import { expeditionsRoutes } from './http/controllers/expeditions/routes'
 import { spaceshipsRoutes } from './http/controllers/spaceships/routes'
+import { launchesRoutes } from './http/controllers/launches/routes'
 
 export const app = fastify()
 
 app.register(expeditionsRoutes)
 app.register(spaceshipsRoutes)
+app.register(launchesRoutes)
 
 app.setErrorHandler((error, _, reply) => {
   // colocando _ ao invés do parametro certo(que seria request),
