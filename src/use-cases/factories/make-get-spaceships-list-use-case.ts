@@ -1,4 +1,4 @@
-import { GetSpaceshipsListUseCase } from '../get-expeditions-list-use-case'
+import { GetSpaceshipsListUseCase } from '../get-spaceships-list-use-case'
 
 export function makeGetSpaceshipsListUseCase() {
   return new GetSpaceshipsListUseCase()
