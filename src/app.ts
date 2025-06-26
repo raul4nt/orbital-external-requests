@@ -5,17 +5,18 @@ import { env } from './env'
 import { expeditionsRoutes } from './http/controllers/expeditions/routes'
 import { spaceshipsRoutes } from './http/controllers/spaceships/routes'
 import { launchesRoutes } from './http/controllers/launches/routes'
+import { astronautsRoutes } from './http/controllers/astronauts/routes'
 
 export const app = fastify()
 
-// Habilita CORS para todos os domínios (pode configurar abaixo)
 app.register(cors, {
-  origin: '*', // ou 'http://localhost:4200' para permitir só o frontend
+  origin: '*',
 })
 
 app.register(expeditionsRoutes)
 app.register(spaceshipsRoutes)
 app.register(launchesRoutes)
+app.register(astronautsRoutes)
 
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {

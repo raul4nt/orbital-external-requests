@@ -1,30 +1,48 @@
-interface GetSpaceshipsListRequest {} // Request vazia
+import fetch from 'node-fetch'
 
-interface Agency {
+// ===================================================================
+// PASSO 1: Criar interfaces que espelham a RESPOSTA CRUA da API
+// Note que todas as propriedades estão em snake_case, exatamente como a API retorna.
+// ===================================================================
+
+interface ApiAgency {
   id: number
   url: string
   name: string
   type: string
 }
 
-interface SpaceshipType {
-  id: number
-  name: string
-}
-
-interface SpaceshipConfig {
+interface ApiSpacecraftConfig {
   id: number
   url: string
   name: string
-  type: SpaceshipType
-  agency: Agency
-  inUse: boolean
-  imageUrl: string
+  type: { id: number; name: string }
+  agency: ApiAgency
+  in_use: boolean
+  image_url: string
 }
 
-interface SpaceshipStatus {
+interface ApiSpacecraft {
   id: number
+  url: string
   name: string
+  serial_number: string
+  status: { id: number; name: string }
+  description: string
+  spacecraft_config: ApiSpacecraftConfig
+  is_placeholder: boolean
+  in_space: boolean
+  time_in_space: string
+  time_docked: string
+  flights_count: number
+  mission_ends_count: number
+}
+
+interface ApiListResponse {
+  count: number
+  next: string | null
+  previous: string | null
+  results: ApiSpacecraft[]
 }
 
 interface Spaceship {
@@ -34,13 +52,21 @@ interface Spaceship {
   serialNumber: string
   isPlaceholder: boolean
   inSpace: boolean
-  timeInSpace: string // ISO 8601 duration
-  timeDocked: string // ISO 8601 duration
+  timeInSpace: string
+  timeDocked: string
   flightsCount: number
   missionEndsCount: number
-  status: SpaceshipStatus
+  status: { id: number; name: string }
   description: string
-  config: SpaceshipConfig
+  config: {
+    id: number
+    url: string
+    name: string
+    type: { id: number; name: string }
+    agency: ApiAgency
+    inUse: boolean
+    imageUrl: string
+  }
 }
 
 interface GetSpaceshipsListResponse {
@@ -50,27 +76,37 @@ interface GetSpaceshipsListResponse {
   spaceships: Spaceship[]
 }
 
+interface GetSpaceshipsListRequest {}
+
 export class GetSpaceshipsListUseCase {
   async execute(
     _: GetSpaceshipsListRequest,
   ): Promise<GetSpaceshipsListResponse> {
     try {
-      const response = await fetch(
-        'https://ll.thespacedevs.com/2.2.0/spacecraft/',
-      )
+      const NASA_AGENCY_ID = 44
+      const API_URL = `https://ll.thespacedevs.com/2.2.0/spacecraft/?spacecraft_config__agency__id=${NASA_AGENCY_ID}`
+
+      const response = await fetch(API_URL)
 
       if (!response.ok) {
         throw new Error(
-          `Erro ao buscar dados da API externa: ${response.status}`,
+          `Erro ao buscar dados da API: ${response.status} ${response.statusText}`,
         )
       }
 
-      const data = await response.json()
+      // AQUI ESTÁ A CORREÇÃO PRINCIPAL:
+      // Usamos "as ApiListResponse" para dizer ao TypeScript:
+      // "Eu garanto que o JSON que está vindo tem a estrutura da interface ApiListResponse"
+      const data = (await response.json()) as ApiListResponse
 
-      const spaceships: Spaceship[] = data.results.map((s: any) => ({
+      // Agora que 'data' está corretamente tipado, o TypeScript permite acessar 'data.results'
+      // e nos dá autocomplete para as propriedades em snake_case.
+      const spaceships: Spaceship[] = data.results.map((s) => ({
         id: s.id,
         url: s.url,
         name: s.name,
+        description: s.description,
+        status: s.status,
         serialNumber: s.serial_number,
         isPlaceholder: s.is_placeholder,
         inSpace: s.in_space,
@@ -78,25 +114,12 @@ export class GetSpaceshipsListUseCase {
         timeDocked: s.time_docked,
         flightsCount: s.flights_count,
         missionEndsCount: s.mission_ends_count,
-        status: {
-          id: s.status.id,
-          name: s.status.name,
-        },
-        description: s.description,
         config: {
           id: s.spacecraft_config.id,
           url: s.spacecraft_config.url,
           name: s.spacecraft_config.name,
-          type: {
-            id: s.spacecraft_config.type.id,
-            name: s.spacecraft_config.type.name,
-          },
-          agency: {
-            id: s.spacecraft_config.agency.id,
-            url: s.spacecraft_config.agency.url,
-            name: s.spacecraft_config.agency.name,
-            type: s.spacecraft_config.agency.type,
-          },
+          type: s.spacecraft_config.type,
+          agency: s.spacecraft_config.agency,
           inUse: s.spacecraft_config.in_use,
           imageUrl: s.spacecraft_config.image_url,
         },
@@ -109,8 +132,8 @@ export class GetSpaceshipsListUseCase {
         spaceships,
       }
     } catch (err) {
-      console.error(err)
-      throw new Error('Erro ao buscar espaçonaves')
+      console.error('Falha no caso de uso GetSpaceshipsListUseCase:', err)
+      throw new Error('Erro ao buscar a lista de espaçonaves.')
     }
   }
 }

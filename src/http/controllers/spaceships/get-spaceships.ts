@@ -8,15 +8,15 @@ export async function getSpaceships(
   try {
     const getSpaceshipsListUseCase = makeGetSpaceshipsListUseCase()
 
-    const { Spaceships } = await getSpaceshipsListUseCase.execute()
+    const { spaceships } = await getSpaceshipsListUseCase.execute({})
 
     return reply.status(200).send({
-      Spaceships,
+      spaceships,
     })
   } catch (err) {
-    console.error(err)
+    console.error('Erro no controller getSpaceships:', err)
     return reply.status(500).send({
-      error: 'Erro ao buscar informações das naves.',
+      error: 'Erro interno ao buscar informações das naves.',
     })
   }
 }

@@ -10,7 +10,6 @@ describe('Get Launches List Use Case', () => {
 
   it('should be able to list launches from external api', async () => {
     const result = await sut.execute({})
-    console.log(result)
 
     expect(result).toEqual(
       expect.objectContaining({
